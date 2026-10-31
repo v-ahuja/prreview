@@ -148,6 +148,10 @@ test('diff controls expand pinned context, split lines, filter files, and save a
   await page.getByRole('button',{name:'Submit review'}).click();
   await expect(page.locator('.draft-count')).toHaveText('0');
   await expect(page.locator('#file-1 .diff-thread').last()).toContainText('preserve this batch.');
+  await page.setViewportSize({width:774,height:900});
+  const bounds=await page.locator('#file-0 .diff-scroll').evaluate(node=>({available:node.clientWidth,table:node.querySelector('table').getBoundingClientRect().width}));
+  expect(bounds.table).toBeLessThanOrEqual(bounds.available+1);
+  expect(await page.locator('#file-0 .line-number').first().evaluate(node=>node.getBoundingClientRect().width)).toBeLessThanOrEqual(43);
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   expect(errors).toEqual([]);

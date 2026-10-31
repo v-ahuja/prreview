@@ -15,6 +15,7 @@ if(dataNode) {
   function numberCell(number,side,index,kind='') {const td=document.createElement('td');td.className=`line-number ${kind}`;if(number!=null){const button=document.createElement('button');button.type='button';button.textContent=number;button.dataset.line=number;button.dataset.side=side;button.setAttribute('aria-label',`Comment on ${side==='LEFT'?'old':'new'} line ${number}`);td.append(button);}return td;}
   function renderFile(index,patch=files[index].patch) {
     const article=$(`#file-${index}`),table=article.querySelector('.code-diff');table.classList.toggle('split-diff',layout==='split');table.replaceChildren();
+    if(layout==='split'){const group=document.createElement('colgroup');for(let i=0;i<4;i++){const column=document.createElement('col');column.className=i%2===0?'diff-number-col':'diff-code-col';group.append(column);}table.append(group);}
     for(const [hunkIndex,hunk] of parsePatch(patch).entries()) {
       const body=document.createElement('tbody'),header=document.createElement('tr'),cell=document.createElement('td');header.className='diff-hunk';cell.colSpan=4;
       const expand=document.createElement('button');expand.type='button';expand.className='expand-diff-context';expand.textContent='↕ Expand context';expand.dataset.hunk=hunkIndex;const title=document.createElement('code');title.textContent=hunk.header;cell.append(expand,title);header.append(cell);body.append(header);
