@@ -33,5 +33,16 @@ export function openDrawing(value, {onInsert}={}) {
   download.onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(current(),null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='review.excalidraw';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
   insert.onclick=()=>{try{onInsert(current());dialog.close();}catch(error){status.textContent=error.message;}};
   close.onclick=()=>dialog.close();
+  const onBackdrop=event=>{
+    const rect=dialog.getBoundingClientRect();
+    return event.target===dialog && (event.clientX<rect.left || event.clientX>rect.right || event.clientY<rect.top || event.clientY>rect.bottom);
+  };
+  let startedOnBackdrop=false;
+  dialog.addEventListener('pointerdown',event=>{startedOnBackdrop=onBackdrop(event);});
+  dialog.addEventListener('click',event=>{
+    // Releasing a drawing gesture outside the canvas must not close the editor.
+    if(startedOnBackdrop && onBackdrop(event))dialog.close();
+    startedOnBackdrop=false;
+  });
   dialog.addEventListener('close',()=>{root.unmount();dialog.remove();},{once:true});
 }

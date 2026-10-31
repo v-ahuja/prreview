@@ -1,4 +1,22 @@
 (() => {
+  // Only floating menus dismiss outside; inline disclosures keep their state.
+  const popupSelector = 'details.generation-options, details.versions, details.diff-review-panel';
+  const openPopups = () => [...document.querySelectorAll(popupSelector)].filter(popup => popup.open);
+  document.addEventListener('click', event => {
+    // A drawing dialog can be opened from a review popup. Dismiss it first.
+    if (document.querySelector('dialog[open]')) return;
+    for (const popup of openPopups()) {
+      if (!event.composedPath().includes(popup)) popup.open = false;
+    }
+  }, true);
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector('dialog[open]')) return;
+    const popups = openPopups();
+    const focused = popups.find(popup => popup.contains(document.activeElement));
+    popups.forEach(popup => { popup.open = false; });
+    focused?.querySelector('summary')?.focus();
+    if (popups.length) event.preventDefault();
+  });
   document.querySelectorAll('.model-fields').forEach(fields => {
     const harness=fields.querySelector('[name=harness],[name=runner]'), model=fields.querySelector('[name=model]');
     const catalog=JSON.parse(fields.dataset.modelOptions || '{}');
@@ -50,10 +68,13 @@
     });
     textarea.addEventListener('keydown', event => {
       if (list.hidden) return;
-      if (event.key === 'Escape') list.hidden = true;
+      if (event.key === 'Escape') { event.preventDefault(); list.hidden = true; }
       if (['ArrowDown','ArrowUp'].includes(event.key)) { event.preventDefault(); active = (active + (event.key === 'ArrowDown' ? 1 : -1) + matches.length) % matches.length; highlight(); }
       if (event.key === 'Enter' || event.key === 'Tab') { event.preventDefault(); choose(matches[active]); }
     });
+    document.addEventListener('click', event => {
+      if (event.target !== textarea && !list.contains(event.target)) list.hidden = true;
+    }, true);
     textarea.addEventListener('blur', () => { setTimeout(() => { list.hidden = true; }, 120); });
   });
   document.querySelectorAll('.github-form').forEach(form => form.addEventListener('submit', () => { const button = form.querySelector('button[type="submit"], button:not([type])'); if (button) { button.disabled = true; button.textContent = 'Saving to GitHub…'; } }));
