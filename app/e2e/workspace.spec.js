@@ -162,7 +162,13 @@ test('manual generation includes the selected harness and model without requests
   await page.goto(pr);expect(calls).toEqual([]);
   await page.getByText('Generate a walkthrough',{exact:true}).click();
   await page.getByLabel('Agent harness').selectOption('claude');
-  await page.getByLabel('Model',{exact:true}).fill('sonnet');
+  await page.getByRole('combobox',{name:'Model',exact:true}).selectOption('sonnet');
+  await page.getByLabel('Agent harness').selectOption('codex');
+  await expect(page.getByRole('combobox',{name:'Model',exact:true})).toHaveValue('');
+  await page.getByLabel('Agent harness').selectOption('opencode');
+  await expect(page.getByRole('combobox',{name:'Model',exact:true})).toContainText('No models configured');
+  await page.getByLabel('Agent harness').selectOption('claude');
+  await expect(page.getByRole('combobox',{name:'Model',exact:true})).toHaveValue('sonnet');
   await page.getByRole('button',{name:'Generate once for everyone'}).click();
   expect(calls).toHaveLength(1);
   expect(new URLSearchParams(calls[0]).get('harness')).toBe('claude');
@@ -212,7 +218,7 @@ test('chat renders Markdown and Mermaid answers with the chosen harness and mode
   await page.goto(pr+'?tab=walkthrough');
   await page.locator('.toggle-chat').click();
   await page.getByLabel('Chat harness').selectOption('claude');
-  await page.getByLabel('Chat model').fill('sonnet');
+  await page.getByLabel('Chat model').selectOption('sonnet');
   await page.getByLabel('Question about this change').fill('Draw the flow');
   await page.getByRole('button',{name:'Send ↑'}).click();
   await expect(page.locator('.chat-message.assistant .markdown-body strong')).toHaveText('Flow');

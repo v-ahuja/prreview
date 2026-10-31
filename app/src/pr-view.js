@@ -1,3 +1,4 @@
+import {modelFields} from './model-fields.js';
 import {renderFileReview} from './diff-view.js';
 import { escapeHtml as h } from './secure.js';
 import { badge, diffHtml, inlineProse, jsonHtml, layout, prose, renderWalkthrough } from './view.js';
@@ -28,14 +29,11 @@ export function renderInbox({ user, rows = [], repos = [], query = new URLSearch
 
 export function generationForm(path, commits, lastReview, canGenerate, preferences = {}) {
   if (!canGenerate) return '<p class="small muted">A contributor with write access can generate walkthroughs.</p>';
-  const choices = modelFields(preferences);
+  const choices = modelFields(preferences) + (preferences.privateModels?.length ? `<p class="small muted">Approved for private code: ${preferences.privateModels.map(h).join(', ')}</p>` : '');
   const options = commits.map(c => `<option value="${h(c.sha)}">${h(c.sha.slice(0, 7))} · ${h(c.commit.message.split('\n')[0].slice(0, 70))}</option>`).join('');
   return `<details class="generation-options"><summary>Generate a walkthrough</summary><form method="post" action="${h(path)}/generate" class="scope-form">${choices}<p class="small muted">Runs only when you click Generate. Uses the selected harness account and model.</p><label>Review scope<select name="scope"><option value="full">Entire pull request</option><option value="since"${lastReview ? '' : ' disabled'}>Since my last completed review${lastReview ? ` (${h(lastReview.slice(0, 7))})` : ''}</option><option value="range"${commits.length ? '' : ' disabled'}>Selected commits</option></select></label><div class="commit-range" hidden><label>First commit (inclusive)<select name="from">${options}</select></label><label>Last commit (inclusive)<select name="to">${commits.map((c, i) => `<option value="${h(c.sha)}"${i === commits.length - 1 ? ' selected' : ''}>${h(c.sha.slice(0, 7))} · ${h(c.commit.message.split('\n')[0].slice(0, 70))}</option>`).join('')}</select></label></div><button>Generate once for everyone</button></form></details>`;
 }
 
-export function modelFields(preferences = {}) {
-  return `<div class="model-fields"><label>Agent harness<select name="harness">${[['codex','Codex CLI'],['claude','Claude Code'],['opencode','OpenCode']].map(([value,label])=>`<option value="${value}"${value === (preferences.harness || 'codex') ? ' selected' : ''}>${label}</option>`).join('')}</select></label><label>Model<input name="model" maxlength="160" value="${h(preferences.model || '')}" placeholder="CLI default, or provider/model for OpenCode" autocomplete="off"></label></div>${preferences.privateModels?.length ? `<p class="small muted">Approved for private code: ${preferences.privateModels.map(h).join(', ')}</p>` : ''}`;
-}
 
 export function renderPull({ user, pull, repository, runs = [], selected, commits = [], files = [], activity = {}, people = { people: [], teams: [] }, tab = 'files', demo = false, lastReview = null, mode = 'manual', notice = '', csrf = '', generationEnabled = true, automaticGenerationEnabled = false, generationPreferences = {} }) {
   const owner = pull.base.repo.owner.login, repo = pull.base.repo.name;

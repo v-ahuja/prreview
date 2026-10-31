@@ -1,8 +1,16 @@
 (() => {
   document.querySelectorAll('.model-fields').forEach(fields => {
-    const harness=fields.querySelector('[name=harness]'), model=fields.querySelector('[name=model]');
+    const harness=fields.querySelector('[name=harness],[name=runner]'), model=fields.querySelector('[name=model]');
+    const catalog=JSON.parse(fields.dataset.modelOptions || '{}');
     const values=new Map([[harness.value,model.value]]);let previous=harness.value;
-    harness.addEventListener('change',()=>{values.set(previous,model.value);model.value=values.get(harness.value) || '';previous=harness.value;model.placeholder=harness.value==='opencode'?'provider/model':'Harness default';});
+    harness.addEventListener('change',()=>{
+      values.set(previous,model.value);
+      const choices=catalog[harness.value] || [];
+      model.replaceChildren(...choices.map(value=>new Option(value || 'Harness default',value)));
+      if(!choices.length){const empty=new Option('No models configured','');empty.disabled=true;empty.selected=true;model.append(empty);}
+      const remembered=values.get(harness.value);model.value=choices.includes(remembered)?remembered:choices[0] || '';
+      model.required=harness.value==='opencode';previous=harness.value;
+    });
   });
   document.querySelectorAll('.scope-form').forEach(form => {
     const scope = form.querySelector('[name="scope"]'), range = form.querySelector('.commit-range');

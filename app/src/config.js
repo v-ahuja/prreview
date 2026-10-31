@@ -1,3 +1,5 @@
+import {modelCatalog} from './model-catalog.js';
+
 export function config(env = process.env) {
   const required = ['DATABASE_URL', 'PUBLIC_ORIGIN', 'GITHUB_APP_ID', 'GITHUB_APP_SLUG', 'GITHUB_CLIENT_ID',
     'GITHUB_CLIENT_SECRET', 'GITHUB_PRIVATE_KEY_BASE64', 'GITHUB_WEBHOOK_SECRET', 'SESSION_ENCRYPTION_KEY'];
@@ -23,6 +25,7 @@ export function config(env = process.env) {
     encryptionKey,
     runner,
     model,
+    modelCatalog: modelCatalog(env),
     modelId: runner ? `${runner}/${model || 'default'}` : model,
     generationEnabled: (env.GENERATION_ENABLED ?? 'true') === 'true',
     automaticGenerationEnabled: env.AUTOMATIC_GENERATION_ENABLED === 'true',

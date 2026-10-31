@@ -11,7 +11,10 @@ import { ghToken } from './local-auth.js';
 import { generateLocalWalkthrough, runners } from './local-runner.js';
 import { escapeHtml as h } from './secure.js';
 import { layout, renderWalkthrough } from './view.js';
-import { modelSelection } from './model-selection.js';
+import { modelSelection, generationPreferences } from './model-selection.js';
+import {modelFields} from './model-fields.js';
+import {modelCatalog} from './model-catalog.js';
+const localModelCatalog=modelCatalog();
 
 const securityHeaders = {
   'Cache-Control': 'no-store',
@@ -89,7 +92,7 @@ function selectedUrl(pr, runner, model) {
 }
 
 function selector(pr, runner, model) {
-  return `<form class="local-selector" method="get" action="/"><input type="hidden" name="pr" value="${h(pr.canonical)}"><label>Runner<select name="runner"><option value="codex"${runner === 'codex' ? ' selected' : ''}>Codex</option><option value="claude"${runner === 'claude' ? ' selected' : ''}>Claude</option></select></label><label>Model (optional)<input name="model" value="${h(model)}" placeholder="Use CLI default" autocomplete="off"></label><button class="secondary">Use runner</button></form>`;
+  return `<form class="local-selector" method="get" action="/"><input type="hidden" name="pr" value="${h(pr.canonical)}">${modelFields(generationPreferences({runner,model,modelCatalog:localModelCatalog}), {harnessLabel:'Runner',harnessName:'runner',harnesses:['codex','claude']})}<button class="secondary">Use runner</button></form>`;
 }
 
 function generateForm(pr, runner, model, csrf, label = 'Generate walkthrough') {
@@ -142,7 +145,7 @@ export function createLocalServer({ getToken = ghToken, fetchPull = getPull, gen
       let content;
       if (job?.status === 'running') content = `<section class="panel empty"><h2>Building the walkthrough</h2><p>${h(runner)} is reading the pinned PR diff. This page will update automatically.</p></section>`;
       else if (job?.status === 'failed') content = `<section class="panel empty"><h2>Generation failed</h2><p>${h(job.error)}</p></section>${generateForm(pr, runner, model, csrf, 'Retry walkthrough')}`;
-      else if (saved) content = `${stale ? '<div class="notice">Archived review — pinned to an earlier PR version.</div>' : ''}<div class="review-version-bar"><strong>${h(scopeLabel(saved))}</strong><span>All slices pre-generated · ${h(saved.headSha.slice(0,7))}</span></div>${renderWalkthrough(saved.result, `local:${saved.id}`, { apiBase: '', query: new URLSearchParams({ pr: pr.canonical, version: saved.id }).toString(), csrf, scope: saved.scope || 'full', generationPreferences:{harness:saved.runner,model:saved.model} })}${!saved.result.evidence ? generateForm(pr, runner, model, csrf, 'Upgrade walkthrough') : ''}`;
+      else if (saved) content = `${stale ? '<div class="notice">Archived review — pinned to an earlier PR version.</div>' : ''}<div class="review-version-bar"><strong>${h(scopeLabel(saved))}</strong><span>All slices pre-generated · ${h(saved.headSha.slice(0,7))}</span></div>${renderWalkthrough(saved.result, `local:${saved.id}`, { apiBase: '', query: new URLSearchParams({ pr: pr.canonical, version: saved.id }).toString(), csrf, scope: saved.scope || 'full', generationPreferences:generationPreferences({runner:saved.runner,model:saved.model,modelCatalog:localModelCatalog}) })}${!saved.result.evidence ? generateForm(pr, runner, model, csrf, 'Upgrade walkthrough') : ''}`;
       else content = `<section class="panel"><h2>Ready to generate</h2><p>The diff is fetched using your GitHub login. The selected CLI prepares every slice before you begin.</p>${generateForm(pr, runner, model, csrf)}</section>`;
       return send(res, 200, page(`#${pr.number} ${pull.title}`, intro + content), 'text/html; charset=utf-8', job?.status === 'running' ? { Refresh: '3' } : {});
     }
