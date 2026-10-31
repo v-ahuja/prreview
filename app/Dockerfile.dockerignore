@@ -1,0 +1,10 @@
+.git
+**/node_modules
+**/.env
+eval/results
+
+**/.env.*
+**/*.swp
+public/vendor
+test-results
+playwright-report

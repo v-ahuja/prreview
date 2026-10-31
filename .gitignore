@@ -141,3 +141,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# PR Walkthrough generated editor and browser test artifacts
+app/public/vendor/
+app/test-results/
+app/playwright-report/
+
+*.swp
